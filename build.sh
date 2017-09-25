@@ -8,7 +8,7 @@ mkdir build 2>/dev/null
 
 ../Odin/odin build src/main.odin -collection=zext=../zext/lib
 
-rm src/lexer/tokens.odin src/parser/ast.odin
+#rm src/lexer/tokens.odin src/parser/ast.odin
 
 if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]; then
 	mv src/main.exe build/main.exe

@@ -8,7 +8,7 @@ import "lexer/lexer.odin";
 VERSION :: "0.1";
 
 _show_version :: proc() {
-	fmt.print("Helm compiler v");
+	fmt.print("Helm v");
 	fmt.println(VERSION);
 	fmt.println("Copyright (c) 2017 Zachary Pierson, Brendan Pierson, and contributors.");
 }
@@ -49,15 +49,21 @@ _add_collection :: proc(bc: ^state.Build_Context, c: state.Collection) -> bool {
 
 main :: proc() {
 
-	fmt.println(fs.get_binary_path());
+	//a := make([]u8, 45); // Runs fine.
+
 
 	if len(os.args) < 2 {
-		_show_help();
+		//_show_help();
 		return;
 	}
 
+
+	//fmt.println("")
+
+	//b := make([]u8, 45); // Segfaults
+
 	out_file := "a";
-	bc : state.Build_Context;
+	//bc : state.Build_Context;
 	json_out_include_contents := false;
 
 	args := os.args[1..];
@@ -69,11 +75,12 @@ main :: proc() {
 		if !ok {
 			fmt.println_err("Couldn't find the path of the current executable.");
 			fmt.println_err("Exiting!");
+			return;
 		}
 
 		stdlib_path := fs.to_absolute(fs.parent_name(binary_path), "stdlib");
 
-		_add_collection(&bc, state.Collection{"std", stdlib_path});
+		//_add_collection(&bc, state.Collection{"std", stdlib_path});
 	}
 
 	src_path := "";
@@ -97,7 +104,10 @@ main :: proc() {
 				//case release:
 			}
 		} else {
-
+			if len(src_path) > 0 {
+				fmt.println_err("Malformed command!");
+			}
+			src_path = ca;
 		}
 	}
 }
