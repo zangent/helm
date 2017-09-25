@@ -1,0 +1,289 @@
+//code :: () -> int {}
+
+//
+
+test, test2 := (18*30+10*2/math.floor(10.4) + 3), (10.0/3.0-3)+-5;
+/*
+
+thing1 : int : 1;
+thing2 : int = 2;
+
+
+test++;
+test2--;
+
+println("Hi!");
+
+my_inta : int; // An int with no value; 0
+my_intb := 1; // Dynamic type of 1
+my_intc :: 1; // Constant dynamic type of 1
+my_intd : int : 5; // Constant int of 5
+my_inte : int = 3; // An int of 3
+
+
+
+my_ :: (one, two, three: i32) {
+
+	apple : colorEnum : color.red;
+
+	numApples : int = one * two;
+
+	numApples += three + 4;
+} 
+
+
+//MULTIPLE ARGS:
+my_proc :: (a, b: i32, c: bool) {
+	println(a);
+	println(b);
+	println(c);
+};
+
+my_proc(1, 4, true);
+
+
+
+
+MODULE_CONFIG :: struct {
+	init_order :: 5;
+}
+
+
+
+// {file_import "load" [OPTIONAL "glc"] "gl_constants"}
+
+// Quotes around what's being imported (i.e. "glc") are optional.
+
+import "glc" as gl_constants;
+
+using import some_other_thing;
+
+
+// */
+
+/*
+
+#global_scope [
+	my_int :: 5;
+]
+
+VARARGS:
+my_varargs :: (a: i32, b: ...bool) {
+	println(a);
+	for i,v in b {
+		println(v);
+	}
+}
+my_varargs(1, true, false, true, true, false);
+
+
+
+
+
+
+
+// STARTING EVERYTHING
+
+a, b: int;
+a = 5;
+b = 10;
+c, d := 1.5, "hello!";
+//e, f := mult_returns();
+
+a++;
+b--;
+a += 10;
+
+
+
+
+
+mult_returns :: () -> int, f32 {
+	return 0x10, 50.3;
+}
+
+square :: (input: int) -> int {
+	return input * input;
+}
+
+mult_returns_cb :: (square_proc: (int) -> int) -> (int, int) {
+	return square_proc(10), square_proc(4);
+}
+
+mrcb_type :: (int) -> int;
+
+mult_returns_cb_with_type :: (square_proc: mrcb_type) {
+	return square_proc(10), square_proc(4);
+}
+
+g: int;
+g = 10;
+h:^int=&g;
+
+test_struct :: struct {
+	a, b: string,
+	c, d: f64,
+	e, f: other_struct,
+	using g: other_struct
+}
+
+other_struct :: struct {
+	h, i: int;
+}
+
+get_test_struct_product :: (using ts: test_struct) -> f64 {
+	return c * d;
+}
+
+get_test_struct_product_v2 :: (ts: test_struct) -> f64 {
+	using ts;
+	return c * d;
+}
+
+test_class :: class {
+	a, b: string,
+	ctor :: () {
+
+	},
+	ctor :: (name: string) {
+		a = name;
+		this.b = name;
+	},
+	dector :: () {
+		println("I am slain!");
+	}
+}
+
+{
+	i: test_class;
+	j := new_raw(test_class);
+	defer delete(j);
+	defer println("End of block!");
+	println("I should come first!");
+}
+
+fib: []int = {1, 1, 2, 3, 5, 8};
+
+for i := 0...fib.len {
+	println(fib[i]);
+}
+
+i, running := 0, true;
+for running {
+	i++;
+	if i > 10 {
+		running = false;
+	}
+}
+
+for k, v in fib {
+	println(v);
+}
+
+// Loops through 0,1,2,3,4,5,6,7,8,9
+for i := 0...10 {
+	print("Loop #%, is in fibonacci: %", i, i in fib);
+}
+
+managed_ptr :: class {
+	ptr: ^any,
+	users: ^int,
+	ctor :: (ptr: ^any) {
+		this.ptr = args.ptr;
+		users = new_raw(int);
+		users^ = 0;
+	},
+	ctor :: () {
+		users^ ++;
+	},
+	dector :: () {
+		users^ --;
+		if(users^ == 0) {
+			delete(ptr);
+			delete(users);
+		}
+	}
+}
+
+/*
+	# Base Class
+	The generic class that all entities inherit from.
+	@SEE[main.helm:update_loop]
+*/
+@Serialize
+base_class :: class {
+	a: int,
+	managed: ^int,
+	unmanaged: #raw ^int,
+	ctor :: () {
+		a = 5;
+		managed = new(int);
+		unmanaged = new_raw(int);
+		managed^ = 10;
+		unmanaged^ = 20;
+	},
+	dector :: () {
+		delete(unmanaged);
+	}
+}
+
+return_ :: () -> (() -> i32) {
+	return () -> i32 {
+		return 5;
+	}
+}
+
+TRUE_CONST_VAL :: true;
+
+#if TRUE_CONST_VAL {
+	println("The value was true!");
+} else {
+	println("The value was _NOT_ true!");
+}
+
+insane_closure_magic :: (seed: i32) -> (() -> i32) {
+	counter: i32 = 0;
+	return ()[seed, counter] -> i32 {
+		counter += seed;
+		return counter;
+	}
+}
+
+a := insane_closure_magic(5);
+b := insane_closure_magic(10);
+
+a(); // 5
+a(); // 10
+a(); // 15
+
+b(); // 10
+b(); // 20
+b(); // 30
+
+gen_string :: () -> string {
+	return "Hello, " + "world!";
+}
+
+hello_world_str := gen_string();
+
+hello_world_const :: #run gen_string();
+
+// Quotes around "std:os" optional
+import std:os as os;
+os.pid();
+
+#load "os";
+pid();
+
+c_lib :: #foreign_c_file "implementation.c";
+cpp_lib :: #foreign_cpp_file "implementation.cpp";
+objc_lib :: #foreign_objc_file "implementation.m";
+
+sdl :: #foreign_lib "SDL2";
+
+create_window :: (name: ^u8) #foreign sdl;
+mkwin :: (name: ^u8) #foreign sdl "create_window"; 
+
+c_callback :: () #cc_c {};
+
+// */
