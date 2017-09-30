@@ -1,0 +1,2 @@
+when HELM_OS == "windows" do export "core:sync_windows.helm";
+when HELM_OS == "linux"   do export "core:sync_linux.helm";

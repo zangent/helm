@@ -1,0 +1,5 @@
+import "fmt.helm";
+
+main :: proc() {
+	fmt.println("Hellope, world!");
+}

@@ -1,0 +1,15 @@
+import "std:math"
+import std:fmt
+import "https://github.com/zangent/helm_libs:zlib"
+
+hex_tst :: 0xFF00FF;
+/*
+/*
+fdsfds
+*/
+fdsafdsa
+*/
+main :: (args: string[]) -> int {
+
+    return 0;
+}

@@ -1,17 +1,22 @@
 #!/bin/bash
 
-mkdir build 2>/dev/null
+release_mode=0
 
-# Temporary evil!
-(gcc -E -traditional-cpp - < src/lexer/tokens.pp.odin 2> /dev/null) | grep -v '^# [0-9]' > src/lexer/tokens.odin
-(gcc -E -traditional-cpp - < src/parser/ast.pp.odin 2> /dev/null) | grep -v '^# [0-9]' > src/parser/ast.odin
+warnings_to_disable="-std=c++11 -g -Wno-switch -Wno-pointer-sign -Wno-tautological-constant-out-of-range-compare -Wno-tautological-compare -Wno-macro-redefined -Wno-writable-strings"
+libraries="-pthread -ldl -lm -lstdc++"
+other_args=""
+compiler="clang"
 
-../Odin/odin build src/main.odin -collection=zext=../zext/lib
-
-#rm src/lexer/tokens.odin src/parser/ast.odin
-
-if [ "$(expr substr $(uname -s) 1 5)" == "MINGW" ]; then
-	mv src/main.exe build/main.exe
-else
-	mv src/main build/main
+if [ "$release_mode" -eq "0" ]; then
+	other_args="${other_args} -g -fno-inline-functions"
 fi
+if [[ "$(uname)" == "Darwin" ]]; then
+
+	# Set compiler to clang on MacOS
+	# MacOS provides a symlink to clang called gcc, but it's nice to be explicit here.
+	compiler="clang"
+
+	other_args="${other_args} -liconv"
+fi
+
+${compiler} src/main.cpp ${warnings_to_disable} ${libraries} ${other_args} -o odin && ./odin run examples/demo.odin
