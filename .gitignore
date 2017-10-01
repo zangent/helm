@@ -262,5 +262,5 @@ bin/
 
 # - Linux/MacOS
 helm
-helm.dSYM
+helm.dSYM/
 examples/demo
