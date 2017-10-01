@@ -1,5 +1,5 @@
-foreign_system_library dl   "dl";
-foreign_system_library libc "c";
+foreign_system_library dl   "dl"
+foreign_system_library libc "c"
 
 import "core:strings.helm";
 

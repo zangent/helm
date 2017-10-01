@@ -1,12 +1,12 @@
-when HELM_OS == "windows" do foreign_system_library lib "opengl32.lib";
-when HELM_OS == "linux"  do foreign_system_library lib "gl";
-
 when HELM_OS == "windows" {
-	import win32 "core:sys/windows.helm";
-	import "core:sys/wgl.helm";
+	foreign_system_library lib "opengl32.lib"
+	import win32 "core:sys/windows.helm"
+	import "core:sys/wgl.helm"
+} else when ODIN_OS == "linux" {
+	foreign_system_library lib "gl"
 }
 
-export "core:opengl_constants.helm";
+export "core:opengl_constants.helm"
 
 _ := compile_assert(HELM_OS != "osx");
 
