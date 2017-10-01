@@ -2265,6 +2265,7 @@ AstNode *parse_operand(AstFile *f, bool lhs) {
 				error(expr, "#run can only be applied to procedure calls");
 				operand = ast_bad_expr(f, token, f->curr_token);
 			}
+			// TODO(zachary): #run
 		} else if (name.string == "file") { return ast_basic_directive(f, token, name.string);
 		} else if (name.string == "line") { return ast_basic_directive(f, token, name.string);
 		} else if (name.string == "procedure") { return ast_basic_directive(f, token, name.string);

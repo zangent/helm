@@ -1590,7 +1590,7 @@ Entity *find_core_entity(Checker *c, String name) {
 	if (e == nullptr) {
 		compiler_error("Could not find type declaration for `%.*s`\n"
 		               "Is `_preload.helm` missing from the `core` directory relative to helm.exe?", LIT(name));
-		// NOTE(bill): This will exit the program as it's cannot continue without it!
+		// NOTE(bill): This will exit the program as it cannot continue without it!
 	}
 	return e;
 }
@@ -1600,7 +1600,7 @@ Type *find_core_type(Checker *c, String name) {
 	if (e == nullptr) {
 		compiler_error("Could not find type declaration for `%.*s`\n"
 		               "Is `_preload.helm` missing from the `core` directory relative to helm.exe?", LIT(name));
-		// NOTE(bill): This will exit the program as it's cannot continue without it!
+		// NOTE(bill): This will exit the program as it cannot continue without it!
 	}
 	return e->type;
 }

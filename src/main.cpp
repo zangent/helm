@@ -683,9 +683,18 @@ int main(int arg_count, char **arg_ptr) {
 	if(llvm_ret != 0) return llvm_ret;
 #endif
 
+	#if defined(GB_SYSTEM_WINDOWS)
+	#define BIN_EXT ".exe"
+	#else
+	#define BIN_EXT ""
+	#endif
+
 	if (run_output) {
-		system_exec_command_line_app("helm run", false, "%.*s", LIT(filename_from_path(parser.init_fullpath)));
+		system_exec_command_line_app("helm run", false, "%.*s" BIN_EXT, LIT(filename_from_path(parser.init_fullpath)));
 	}
+
+	#undef BIN_EXT
+
 #endif
 
 	return 0;
@@ -811,11 +820,10 @@ int llvm_build(Timings *timings, Checker *checker) {
 		}
 
 		if (build_context.show_timings) {
-			show_timings(checker, timings);
+			show_timings(&checker, &timings);
 		}
 
 		remove_temp_files(output_base);
-
 	#else
 
 		// NOTE(zangent): Linux / Unix is unfinished and not tested very well.
@@ -877,7 +885,6 @@ int llvm_build(Timings *timings, Checker *checker) {
 				output_ext = ".so";
 				link_settings = "-shared";
 			#endif
-
 		} else {
 			// TODO: Do I need anything here?
 			link_settings = "";

@@ -448,25 +448,25 @@ irAddr ir_addr_bit_field(irValue *addr, i32 bit_field_value_index) {
 	return v;
 }
 
-enum irDebugEnchelmg {
-	irDebugBasicEnchelmg_Invalid       = 0,
+enum irDebugEncoding {
+	irDebugBasicEncoding_Invalid       = 0,
 
-	irDebugBasicEnchelmg_address       = 1,
-	irDebugBasicEnchelmg_boolean       = 2,
-	irDebugBasicEnchelmg_float         = 3,
-	irDebugBasicEnchelmg_signed        = 4,
-	irDebugBasicEnchelmg_signed_char   = 5,
-	irDebugBasicEnchelmg_unsigned      = 6,
-	irDebugBasicEnchelmg_unsigned_char = 7,
+	irDebugBasicEncoding_address       = 1,
+	irDebugBasicEncoding_boolean       = 2,
+	irDebugBasicEncoding_float         = 3,
+	irDebugBasicEncoding_signed        = 4,
+	irDebugBasicEncoding_signed_char   = 5,
+	irDebugBasicEncoding_unsigned      = 6,
+	irDebugBasicEncoding_unsigned_char = 7,
 
-	irDebugBasicEnchelmg_member       = 13,
-	irDebugBasicEnchelmg_pointer_type = 15,
-	irDebugBasicEnchelmg_typedef      = 22,
+	irDebugBasicEncoding_member       = 13,
+	irDebugBasicEncoding_pointer_type = 15,
+	irDebugBasicEncoding_typedef      = 22,
 
-	irDebugBasicEnchelmg_array_type       = 1,
-	irDebugBasicEnchelmg_enumeration_type = 4,
-	irDebugBasicEnchelmg_structure_type   = 19,
-	irDebugBasicEnchelmg_union_type       = 23,
+	irDebugBasicEncoding_array_type       = 1,
+	irDebugBasicEncoding_enumeration_type = 4,
+	irDebugBasicEncoding_structure_type   = 19,
+	irDebugBasicEncoding_union_type       = 23,
 
 };
 
@@ -527,7 +527,7 @@ struct irDebugInfo {
 			String          name;
 			i32             size;
 			i32             align;
-			irDebugEnchelmg enchelmg;
+			irDebugEncoding encoding;
 		} BasicType;
 		struct {
 			irDebugInfo *        return_type;
@@ -535,10 +535,10 @@ struct irDebugInfo {
 		} ProcType;
 		struct {
 			irDebugInfo *   base_type;
-			irDebugEnchelmg enchelmg;
+			irDebugEncoding encoding;
 		} DerivedType;
 		struct {
-			irDebugEnchelmg      enchelmg;
+			irDebugEncoding      encoding;
 			String               name;
 			String               identifier;
 			irDebugInfo *        file;
@@ -853,10 +853,16 @@ String ir_get_global_name(irModule *m, irValue *v) {
 	String *found = map_get(&m->entity_names, hash_entity(e));
 	if (found != nullptr) {
 		name = *found;
+	} else {
+		GB_ASSERT(name.len > 0);
 	}
 	return name;
 }
 
+void ir_add_entity_name(irModule *m, Entity *e, String name) {
+	GB_ASSERT(name.len > 0);
+	map_set(&m->entity_names, hash_entity(e), name);
+}
 
 
 irValue *ir_instr_local(irProcedure *p, Entity *e, bool zero_initialized) {
@@ -1153,14 +1159,21 @@ irValue *ir_generate_array(irModule *m, Type *elem_type, i64 count, String prefi
 	gbAllocator a = m->allocator;
 	Token token = {Token_Ident};
 	isize name_len = prefix.len + 10;
-	token.string.text = gb_alloc_array(a, u8, name_len);
-	token.string.len = gb_snprintf(cast(char *)token.string.text, name_len,
-	                               "%.*s-%llx", LIT(prefix), cast(unsigned long long)id)-1;
-	Entity *e = make_entity_variable(a, nullptr, token, make_type_array(a, elem_type, count), false);
+
+	char *text = gb_alloc_array(a, char, name_len);
+	gb_snprintf(text, name_len,
+	            "%.*s-%llx", LIT(prefix), cast(unsigned long long)id);
+
+	String s = make_string_c(text);
+
+	Entity *e = make_entity_variable(a, nullptr,
+	                                 make_token_ident(s),
+	                                 make_type_array(a, elem_type, count),
+	                                 false);
 	irValue *value = ir_value_global(a, e, nullptr);
 	value->Global.is_private = true;
 	ir_module_add_value(m, e, value);
-	map_set(&m->members, hash_string(token.string), value);
+	map_set(&m->members, hash_string(s), value);
 	return value;
 }
 
@@ -3436,6 +3449,7 @@ irValue *ir_type_info(irProcedure *proc, Type *type) {
 	type = default_type(type);
 
 	i32 entry_index = cast(i32)type_info_index(info, type);
+	GB_ASSERT(entry_index >= 0);
 
 	// gb_printf_err("%d %s\n", entry_index, type_to_string(type));
 
@@ -3639,7 +3653,8 @@ void ir_mangle_add_sub_type_name(irModule *m, Entity *field, String parent) {
 	                                 "%.*s.%.*s", LIT(parent), LIT(cn));
 
 	String child = {text, new_name_len-1};
-	map_set(&m->entity_names, hash_entity(field), child);
+	GB_ASSERT(child.len > 0);
+	ir_add_entity_name(m, field, child);
 	ir_gen_global_type_name(m, field, child);
 }
 
@@ -5059,7 +5074,7 @@ irValue *ir_get_using_variable(irProcedure *proc, Entity *e) {
 }
 
 bool ir_is_elem_const(irModule *m, AstNode *elem, Type *elem_type) {
-	if (base_type(elem_type) == t_any) {
+	if (!elem_type_can_be_constant(elem_type)) {
 		return false;
 	}
 	if (elem->kind == AstNode_FieldValue) {
@@ -5148,15 +5163,16 @@ irAddr ir_build_addr(irProcedure *proc, AstNode *expr) {
 				String name = e->token.string;
 				if (name == "names") {
 					irValue *ti_ptr = ir_type_info(proc, type);
+					irValue *variant = ir_emit_struct_ep(proc, ti_ptr, 2);
 
 					irValue *names_ptr = nullptr;
 
 					if (is_type_enum(type)) {
-						irValue *enum_info = ir_emit_conv(proc, ti_ptr, t_type_info_enum_ptr);
-						names_ptr = ir_emit_struct_ep(proc, enum_info, 3);
+						irValue *enum_info = ir_emit_conv(proc, variant, t_type_info_enum_ptr);
+						names_ptr = ir_emit_struct_ep(proc, enum_info, 1);
 					} else if (type->kind == Type_Struct) {
-						irValue *struct_info = ir_emit_conv(proc, ti_ptr, t_type_info_struct_ptr);
-						names_ptr = ir_emit_struct_ep(proc, struct_info, 3);
+						irValue *struct_info = ir_emit_conv(proc, variant, t_type_info_struct_ptr);
+						names_ptr = ir_emit_struct_ep(proc, struct_info, 1);
 					}
 					return ir_addr(names_ptr);
 				} else {
@@ -5573,6 +5589,27 @@ irAddr ir_build_addr(irProcedure *proc, AstNode *expr) {
 			}
 		} break;
 
+		case Type_Map: {
+			if (cl->elems.count == 0) {
+				break;
+			}
+			gbAllocator a = proc->module->allocator;
+			{
+				irValue **args = gb_alloc_array(a, irValue *, 2);
+				args[0] = ir_gen_map_header(proc, v, type);
+				args[1] = ir_const_int(a, 2*cl->elems.count);
+				ir_emit_global_call(proc, "__dynamic_map_reserve", args, 2);
+			}
+			for_array(field_index, cl->elems) {
+				AstNode *elem = cl->elems[field_index];
+				ast_node(fv, FieldValue, elem);
+
+				irValue *key   = ir_build_expr(proc, fv->field);
+				irValue *value = ir_build_expr(proc, fv->value);
+				ir_insert_dynamic_map_key_and_value(proc, v, type, key, value);
+			}
+		} break;
+
 		case Type_DynamicArray: {
 			if (cl->elems.count == 0) {
 				break;
@@ -5608,27 +5645,6 @@ irAddr ir_build_addr(irProcedure *proc, AstNode *expr) {
 				args[3] = ir_emit_conv(proc, items, t_rawptr);
 				args[4] = ir_const_int(a, item_count);
 				ir_emit_global_call(proc, "__dynamic_array_append", args, 5);
-			}
-		} break;
-
-		case Type_Map: {
-			if (cl->elems.count == 0) {
-				break;
-			}
-			gbAllocator a = proc->module->allocator;
-			{
-				irValue **args = gb_alloc_array(a, irValue *, 2);
-				args[0] = ir_gen_map_header(proc, v, type);
-				args[1] = ir_const_int(a, 2*cl->elems.count);
-				ir_emit_global_call(proc, "__dynamic_map_reserve", args, 2);
-			}
-			for_array(field_index, cl->elems) {
-				AstNode *elem = cl->elems[field_index];
-				ast_node(fv, FieldValue, elem);
-
-				irValue *key   = ir_build_expr(proc, fv->field);
-				irValue *value = ir_build_expr(proc, fv->value);
-				ir_insert_dynamic_map_key_and_value(proc, v, type, key, value);
 			}
 		} break;
 
@@ -7257,11 +7273,12 @@ void ir_end_procedure_body(irProcedure *proc) {
 
 
 void ir_insert_code_before_proc(irProcedure* proc, irProcedure *parent) {
-	if (parent == nullptr) {
-		if (proc->name == "main") {
-			ir_emit_startup_runtime(proc);
-		}
-	}
+
+	// if (parent == nullptr) {
+		// if (proc->name == "main") {
+			// ir_emit_startup_runtime(proc);
+		// }
+	// }
 }
 
 void ir_build_proc(irValue *value, irProcedure *parent) {
@@ -7641,7 +7658,7 @@ void ir_gen_tree(irGen *s) {
 			if (!e->scope->is_global) {
 				name = ir_mangle_name(s, e->token.pos.file, e);
 			}
-			map_set(&m->entity_names, hash_entity(e), name);
+			ir_add_entity_name(m, e, name);
 
 			irValue *g = ir_value_global(a, e, nullptr);
 			g->Global.name = name;
@@ -7709,14 +7726,14 @@ void ir_gen_tree(irGen *s) {
 			if (e->kind == Entity_Procedure && (e->Procedure.tags & ProcTag_export) != 0) {
 			} else if (e->kind == Entity_Procedure && e->Procedure.link_name.len > 0) {
 				// Handle later
-			} else if (scope->is_init && e->kind == Entity_Procedure && name == "main") {
+			// } else if (scope->is_init && e->kind == Entity_Procedure && name == "main") {
 			} else {
 				name = ir_mangle_name(s, e->token.pos.file, e);
 			}
 		} else if (check_is_entity_overloaded(e)) {
 			name = ir_mangle_name(s, e->token.pos.file, e);
 		}
-		map_set(&m->entity_names, hash_entity(e), name);
+		ir_add_entity_name(m, e, name);
 
 		switch (e->kind) {
 		case Entity_TypeName:
@@ -7788,7 +7805,7 @@ void ir_gen_tree(irGen *s) {
 
 #if defined(GB_SYSTEM_WINDOWS)
 	if (build_context.is_dll && !has_dll_main) {
-		// proc DllMain(inst: rawptr, reason: u32, reserved: rawptr) -> i32
+		// DllMain :: proc(inst: rawptr, reason: u32, reserved: rawptr) -> i32
 		String name = str_lit("DllMain");
 		Type *proc_params = make_type_tuple(a);
 		Type *proc_results = make_type_tuple(a);
@@ -7821,7 +7838,7 @@ void ir_gen_tree(irGen *s) {
 		Entity *e = make_entity_procedure(a, nullptr, make_token_ident(name), proc_type, 0);
 		irValue *p = ir_value_procedure(a, m, e, proc_type, nullptr, body, name);
 
-		map_set(&m->values, hash_pointer(e), p);
+		map_set(&m->values, hash_entity(e), p);
 		map_set(&m->members, hash_string(name), p);
 
 		irProcedure *proc = &p->Proc;
@@ -7841,12 +7858,10 @@ void ir_gen_tree(irGen *s) {
 		ir_start_block(proc, then);
 
 		{
-			String main_name = str_lit("main");
-			irValue **found = map_get(&m->members, hash_string(main_name));
+			irValue **found = map_get(&m->values, hash_entity(entry_point));
+			ir_emit(proc, ir_alloc_instr(proc, irInstr_StartupRuntime));
 			if (found != nullptr) {
 				ir_emit_call(proc, *found, nullptr, 0);
-			} else {
-				ir_emit(proc, ir_alloc_instr(proc, irInstr_StartupRuntime));
 			}
 		}
 
@@ -7859,6 +7874,73 @@ void ir_gen_tree(irGen *s) {
 		ir_end_procedure_body(proc);
 	}
 #endif
+	if (!(build_context.is_dll && !has_dll_main)) {
+		// main :: proc(argc: i32, argv: ^^u8) -> i32
+		String name = str_lit("main");
+		Type *proc_params = make_type_tuple(a);
+		Type *proc_results = make_type_tuple(a);
+
+		Scope *proc_scope = gb_alloc_item(a, Scope);
+
+		array_init_count(&proc_params->Tuple.variables, a, 2);
+		array_init_count(&proc_results->Tuple.variables, a, 1);
+
+		Type *char_ptr_ptr = make_type_pointer(a, make_type_pointer(a, t_u8));
+		proc_params->Tuple.variables[0] = make_entity_param(a, proc_scope, make_token_ident(str_lit("argc")), t_i32, false, false);
+		proc_params->Tuple.variables[1] = make_entity_param(a, proc_scope, make_token_ident(str_lit("argv")), char_ptr_ptr, false, false);
+
+
+		proc_results->Tuple.variables[0] = make_entity_param(a, proc_scope, empty_token, t_i32, false, false);
+
+
+		Type *proc_type = make_type_proc(a, proc_scope,
+		                                 proc_params, 2,
+		                                 proc_results, 1, false, ProcCC_C);
+
+		// TODO(bill): make this more robust
+		proc_type->Proc.abi_compat_params = gb_alloc_array(a, Type *, proc_params->Tuple.variables.count);
+		for_array(i, proc_params->Tuple.variables) {
+			proc_type->Proc.abi_compat_params[i] = proc_params->Tuple.variables[i]->type;
+		}
+		proc_type->Proc.abi_compat_result_type = proc_results->Tuple.variables[0]->type;
+
+		AstNode *body = gb_alloc_item(a, AstNode);
+		Entity *e = make_entity_procedure(a, nullptr, make_token_ident(name), proc_type, 0);
+		irValue *p = ir_value_procedure(a, m, e, proc_type, nullptr, body, name);
+
+		map_set(&m->values, hash_entity(e), p);
+		map_set(&m->members, hash_string(name), p);
+
+		irProcedure *proc = &p->Proc;
+		proc->tags = ProcTag_no_inline; // TODO(bill): is no_inline a good idea?
+		e->Procedure.link_name = name;
+
+		ir_begin_procedure_body(proc);
+
+		// NOTE(bill): https://msdn.microsoft.com/en-us/library/windows/desktop/ms682583(v=vs.85).aspx
+		// DLL_PROCESS_ATTACH == 1
+
+		irValue *argc = ir_emit_load(proc, *map_get(&proc->module->values, hash_entity(proc_params->Tuple.variables[0])));
+		irValue *argv = ir_emit_load(proc, *map_get(&proc->module->values, hash_entity(proc_params->Tuple.variables[1])));
+
+		irValue *global_argc = ir_find_global_variable(proc, str_lit("__argc__"));
+		irValue *global_argv = ir_find_global_variable(proc, str_lit("__argv__"));
+
+		ir_emit_store(proc, global_argc, argc);
+		ir_emit_store(proc, global_argv, argv);
+
+		ir_emit(proc, ir_alloc_instr(proc, irInstr_StartupRuntime));
+		{
+			irValue **found = map_get(&proc->module->values, hash_entity(entry_point));
+			if (found != nullptr) {
+				ir_emit_call(proc, *found, nullptr, 0);
+			}
+		}
+
+		ir_emit_return(proc, v_zero32);
+		ir_end_procedure_body(proc);
+	}
+
 #if 0 && defined(GB_SYSTEM_WINDOWS)
 	if (!m->build_context->is_dll && !has_win_main) {
 		// proc WinMain(inst, prev: rawptr, cmd_line: ^byte, cmd_show: i32) -> i32
@@ -7892,7 +7974,7 @@ void ir_gen_tree(irGen *s) {
 
 		m->entry_point_entity = e;
 
-		map_set(&m->values, hash_pointer(e), p);
+		map_set(&m->values, hash_entity(e), p);
 		map_set(&m->members, hash_string(name), p);
 
 		irProcedure *proc = &p->Proc;
@@ -7916,7 +7998,7 @@ void ir_gen_tree(irGen *s) {
 		Entity *e = make_entity_procedure(a, nullptr, make_token_ident(name), proc_type, 0);
 		irValue *p = ir_value_procedure(a, m, e, proc_type, nullptr, body, name);
 
-		map_set(&m->values, hash_pointer(e), p);
+		map_set(&m->values, hash_entity(e), p);
 		map_set(&m->members, hash_string(name), p);
 
 

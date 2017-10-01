@@ -415,7 +415,7 @@ void advance_to_next_rune(Tokenizer *t) {
 		} else if (rune >= 0x80) { // not ASCII
 			width = gb_utf8_decode(t->read_curr, t->end-t->read_curr, &rune);
 			if (rune == GB_RUNE_INVALID && width == 1)
-				tokenizer_err(t, "Illegal UTF-8 enchelmg");
+				tokenizer_err(t, "Illegal UTF-8 encoding");
 			else if (rune == GB_RUNE_BOM && t->curr-t->start > 0)
 				tokenizer_err(t, "Illegal byte order mark");
 		}

@@ -19,7 +19,7 @@ Helm's compiler is a fork of [the Odin programming language.](https://github.com
 
 - Windows
 	* x86-64
-	* MSVC installed (C++11 support)
+	* MSVC >= 2015 installed (C++11 support)
 	* [LLVM binaries](https://github.com/gingerBill/Odin/releases/tag/llvm-4.0-windows) for `opt.exe` and `llc.exe`
 	* Requires MSVC's link.exe as the linker
 		* run `vcvarsall.bat` (or `misc/shell.bat` for VS2017) to put the `link` binary in your path
@@ -33,7 +33,7 @@ Helm's compiler is a fork of [the Odin programming language.](https://github.com
 	* x86-64
 	* Build tools (ld)
 	* LLVM installed
-	* Clang installed (temporary - this is Calling the linker for now)
+	* Clang installed (temporary - this is calling the linker for now)
 
 ## Warnings
 
