@@ -19,4 +19,4 @@ if [[ "$(uname)" == "Darwin" ]]; then
 	other_args="${other_args} -liconv"
 fi
 
-${compiler} src/main.cpp ${warnings_to_disable} ${libraries} ${other_args} -o odin && ./odin run examples/demo.odin
+${compiler} src/main.cpp ${warnings_to_disable} ${libraries} ${other_args} -o helm && ./helm run examples/demo.helm

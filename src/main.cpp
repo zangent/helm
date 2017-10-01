@@ -15,6 +15,7 @@
 #include "ir.cpp"
 #include "ir_opt.cpp"
 #include "ir_print.cpp"
+#include "workspace.cpp"
 
 #if defined(GB_SYSTEM_WINDOWS)
 // NOTE(bill): `name` is used in debugging and profiling modes
