@@ -6,7 +6,8 @@
 
 #include "common.cpp"
 #include "timings.cpp"
-#include "build_settings.cpp"
+// #include "build_settings.cpp"
+#include "workspace.cpp"
 #include "tokenizer.cpp"
 #include "parser.cpp"
 #include "docs.cpp"
@@ -15,7 +16,6 @@
 #include "ir.cpp"
 #include "ir_opt.cpp"
 #include "ir_print.cpp"
-#include "workspace.cpp"
 
 #if defined(GB_SYSTEM_WINDOWS)
 // NOTE(bill): `name` is used in debugging and profiling modes
@@ -531,15 +531,13 @@ void remove_temp_files(String output_base) {
 #undef EXT_REMOVE
 }
 
-int llvm_build(Timings *timings, Checker *checker);
-
 int main(int arg_count, char **arg_ptr) {
 	if (arg_count < 2) {
 		usage(make_string_c(arg_ptr[0]));
 		return 1;
 	}
 
-	Timings timings = {0};
+/*	Timings timings = {0};
 	timings_init(&timings, str_lit("Total Time"), 128);
 	defer (timings_destroy(&timings));
 	init_string_buffer_memory();
@@ -548,7 +546,7 @@ int main(int arg_count, char **arg_ptr) {
 
 	array_init(&library_collections, heap_allocator());
 	// NOTE(bill): `core` cannot be (re)defined by the user
-	add_library_collection(str_lit("core"), get_fullpath_relative(heap_allocator(), helm_root_dir(), str_lit("core")));
+	add_library_collection(str_lit("core"), get_fullpath_relative(heap_allocator(), helm_root_dir(), str_lit("core")));*/
 
 	Array<String> args = setup_args(arg_count, arg_ptr);
 

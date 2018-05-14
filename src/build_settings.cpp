@@ -1,3 +1,5 @@
+#error Included build_settings!
+
 // This stores the information for the specify architecture of this build
 struct BuildContext {
 	// Constants
@@ -26,7 +28,9 @@ struct BuildContext {
 };
 
 
-gb_global BuildContext build_context = {0};
+// TODO(zachary): Refactor this into the workspace.
+//                This can only be done after we irreversibly diverge from Odin.
+// gb_global thread_local BuildContext build_context = {0};
 
 
 struct LibraryCollections {
@@ -34,7 +38,9 @@ struct LibraryCollections {
 	String path;
 };
 
-gb_global Array<LibraryCollections> library_collections = {0};
+// TODO(zachary): Refactor this into the workspace.
+//                This can only be done after we irreversibly diverge from Odin.
+// gb_global thread_local Array<LibraryCollections> library_collections = {0};
 
 void add_library_collection(String name, String path) {
 	// TODO(bill): Check the path is valid and a directory
